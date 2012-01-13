@@ -71,7 +71,7 @@ module Vanity
         end
 
         def results(start_date, end_date)
-          @profile = Garb::Profile.all.find { |p| p.web_property_id == @web_property_id }
+          @profile = Garb::Management::Profile.all.find { |p| p.web_property_id == @web_property_id }
           @start_date = start_date
           @end_date = end_date
           Garb::ReportResponse.new(send_request_for_body).results

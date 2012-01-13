@@ -243,13 +243,20 @@ module Vanity
     # Step 3: Open your browser to http://localhost:3000/vanity
     module Dashboard
       def index
-        render :file=>Vanity.template("_report"), :content_type=>Mime::HTML, :layout=>false
+        render :file => Vanity.template("_report"), :content_type => Mime::HTML, :layout => false
+      end
+
+      def load_widget
+        type = params[:widget_type]
+        id   = params[:id]
+        widget = Vanity.playground.send(type.singularize, id)
+        render :file => Vanity.template("_#{type.singularize}"), :locals => { :"#{type.singularize}" => widget }
       end
 
       def chooses
         exp = Vanity.playground.experiment(params[:e].to_sym)
         exp.chooses(exp.alternatives[params[:a].to_i].value)
-        render :file=>Vanity.template("_experiment"), :locals=>{:experiment=>exp}
+        render :file => Vanity.template("_experiment"), :locals=>{:experiment=>exp}
       end
 
       def add_participant

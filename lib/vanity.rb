@@ -24,6 +24,8 @@ require "vanity/metric/remote"
 # Experiments.
 require "vanity/experiment/base"
 require "vanity/experiment/ab_test"
+# Widgets
+require "vanity/widget/base"
 # Database adapters
 require "vanity/adapters/abstract_adapter"
 require "vanity/adapters/redis_adapter"

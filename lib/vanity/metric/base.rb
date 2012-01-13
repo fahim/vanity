@@ -24,15 +24,19 @@ module Vanity
       attr_reader :playground
 
       # Defines a new metric, using the class Vanity::Metric.
-      def metric(name, &block)
+      def metric(id_end, &block)
+        id =  "#{@file_path}.#{id_end}"
+        @metric_id = id
         fail "Metric #{@metric_id} already defined in playground" if playground.metrics[@metric_id]
-        metric = Metric.new(playground, name.to_s, @metric_id)
+        
+        metric = Metric.new(playground, id)
+        metric.name(@metric_id)
         metric.instance_eval &block
         playground.metrics[@metric_id] = metric
       end
 
-      def new_binding(playground, id)
-        @playground, @metric_id = playground, id
+      def new_binding(playground, file_path)
+        @playground, @file_path = playground, file_path
         binding
       end
 
@@ -58,6 +62,10 @@ module Vanity
       #   puts Vanity::Metric.description(metric)
       def description(metric)
         metric.description if metric.respond_to?(:description)
+      end
+      
+      def name(metric)
+        metric.name if metric.respond_to?(:name)
       end
 
       # Helper method to return bounds for a metric.
@@ -101,7 +109,6 @@ module Vanity
         context.instance_eval do
           extend Definition
           metric = eval(source, context.new_binding(playground, id), file)
-          fail NameError.new("Expected #{file} to define metric #{id}", id) unless playground.metrics[id]
           metric
         end
       rescue
@@ -117,9 +124,10 @@ module Vanity
 
     # Takes playground (need this to access Redis), friendly name and optional
     # id (can infer from name).
-    def initialize(playground, name, id = nil)
-      @playground, @name = playground, name.to_s
-      @id = (id || name.to_s.downcase.gsub(/\W+/, '_')).to_sym
+    def initialize(playground, id)
+      @playground = playground
+      @id = id.downcase.gsub(/\W+/, '_').to_sym
+      @metric_id = id
       @hooks = []
     end
 
@@ -188,9 +196,9 @@ module Vanity
     #  -- Reporting --
     
     # Human readable metric name.  All metrics must implement this method.
-    attr_reader :name
+    attr_accessor :name
     alias :to_s :name
-
+    
     # Human readable description.  Use two newlines to break paragraphs.
     attr_accessor :description
 
@@ -203,6 +211,15 @@ module Vanity
     def description(text = nil)
       @description = text if text
       @description
+    end
+    
+    def name(text = nil)
+      @name = text if text
+      @name
+    end
+    
+    def id
+      @metric_id
     end
 
     # Given two arguments, a start date and an end date (inclusive), returns an

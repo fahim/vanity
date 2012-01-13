@@ -149,6 +149,7 @@ module Vanity
     def reload!
       @experiments = nil
       @metrics = nil
+      @widgets = nil
       load!
     end
 
@@ -164,7 +165,7 @@ module Vanity
     # @see Vanity::Metric
     # @since 1.1.0
     def metric(id)
-      metrics[id.to_sym] or raise NameError, "No metric #{id}"
+      metrics[id.to_s] or raise NameError, "No metric #{id}"
     end
 
     # True if collection data (metrics and experiments). You only want to
@@ -215,7 +216,25 @@ module Vanity
     def track!(id, count = 1)
       metric(id).track! count
     end
-
+    
+    # Returns hash of widgets (key is widget id).
+    #
+    # @see Vanity::Widget
+    # @since 1.1.0
+    def widgets
+      unless @widgets
+        @widgets = {}
+        @logger.info "Vanity: loading widgets from #{load_path}/widgets"
+        Dir[File.join(load_path, "widgets/*.rb")].each do |file|
+          Widget.load self, @loading, file
+        end
+      end
+      @widgets
+    end
+        
+    def widget(id)
+      widgets[id.to_sym] or raise NameError, "No widget #{id}"
+    end
 
     # -- Connection management --
  
