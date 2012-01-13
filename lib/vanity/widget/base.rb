@@ -160,6 +160,34 @@ module Vanity
       @options[:stack] = value if value
       @options[:stack]
     end
+    
+    def numerator(metric_id)
+      @options[:numerator] = Vanity.playground.metric(metric_id.to_sym)
+    end
+
+    def denominator(metric_id)
+      @options[:denominator] = Vanity.playground.metric(metric_id.to_sym)
+    end
+    
+    def rate_data
+      return @rate_values if @rate_values
+      @rate_values = {}
+      
+      Vanity::Metric.data(@options[:numerator]).each do |date, value|
+        @rate_values[date] = value
+      end
+      Vanity::Metric.data(@options[:denominator]).each do |date, value|
+        @rate_values[date] = value > 0 ? (@rate_values[date].to_f / value.to_f) : 0
+        @rate_values[date] *= 100 if @options[:as_percentages]
+      end
+      
+      @rate_values
+    end
+    
+    def graph(*args)
+      args.each { |arg| @options[arg] = true }
+      stack true if args.include?(:as_percentages)
+    end
 
     def metrics(*metric_ids)
       if metric_ids.any?

@@ -62,6 +62,8 @@ module Vanity
         grouped = @ar_column ? @ar_scoped.send(@ar_aggregate, @ar_column, query) : @ar_scoped.count(query)
         (sdate..edate).inject([]) { |ordered, date| ordered << (grouped[date] || 0) }
       end
+      
+      alias :data_values :values
 
       # This track! method stores nothing, but calls the hooks.
       def track!(args = nil)

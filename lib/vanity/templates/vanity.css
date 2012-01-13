@@ -28,6 +28,6 @@
 
 .vanity .sidebar { width: 20%; background: #eee; padding: 5px; font-size: 14px; float: left }
 .vanity .content { float: left; width: 75%; margin-left: 25px }
-.vanity .content .widget { width: 45%; float: left; padding: 2% }
+.vanity .content .widget { width: 45%; float: left; padding: 2%; min-height: 290px }
 
 .vanity h2 { clear: both; padding: 3px; background: #eee; color: gray; text-transform: capitalize }

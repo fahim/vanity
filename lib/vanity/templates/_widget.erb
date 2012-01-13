@@ -3,18 +3,46 @@
 
   <%
     data_points = []
-    widget.metrics.each do |metric_id, metric_options|
-      data = Vanity::Metric.data(metric_options[:metric])
-  	  #min, max = data.map(&:last).minmax
-  	  sum = data.map(&:last).sum
-  	  
-   	  js = data.map { |date,value| "['#{date.to_time.httpdate}',#{value}]" }.join(",")
-  	  data_points << [metric_options, js, sum]
+     # used for options[:as_percentages]
+    
+    if widget.options[:as_percentages]
+      # Gather sum by date so we can calculate percentages for each metric
+      sum_by_date = {}
+      widget.metrics.each do |metric_id, metric_options|
+        data = Vanity::Metric.data(metric_options[:metric])
+    	  data.each do |date, value|
+  	      sum_by_date[date] ||= 0
+  	      sum_by_date[date] += value
+  	    end
+	    end
     end
+    
+    if widget.options[:rate] || widget.options[:ratio]
+      data = widget.rate_data
+  	  js = widget.rate_data.map { |date, value| "['#{date.to_time.httpdate}',#{value}]" }.join(",")
+  	  data_points << [{:options => {}}, js, 0]
+    else
+      widget.metrics.each do |metric_id, metric_options|
+        data = Vanity::Metric.data(metric_options[:metric])
+    	  sum = data.map(&:last).sum
+  	  
+    	  js = data.map do |date, value|
+    	    if widget.options[:as_percentages]
+    	      value_to_graph = sum_by_date[date] == 0 ? 0 : (value / sum_by_date[date] * 100)
+  	      else
+  	        value_to_graph = value
+          end
+    	    "['#{date.to_time.httpdate}',#{value_to_graph}]"
+  	    end.join(",")
+  	  
+    	  data_points << [metric_options, js, sum]
+      end
 
-    data_points.sort_by!(&:last)
-    total = data_points.select { |point| point.first[:options][:y_axis] == 1 }.map(&:last).sum
+      data_points.sort_by!(&:last)
+      total = data_points.select { |point| point.first[:options][:y_axis] == 1 }.map(&:last).sum
+    end
   %>
+  
   <div class="chart"></div>
   <div class="legend"></div>
 
@@ -23,17 +51,30 @@
   	Vanity.ci_widget("<%= widget.id.gsub('.', '_') %>").plot(
   		[
   		 <% data_points.each_with_index do |data_point, index| %>
-  			 <% metric_options, js, sum = data_point %>
-  		   <% percentage = sum / total * 100 %>
+  		 <%
+  		   metric_options, js, sum = data_point
+ 		     label_name = widget.options[:rate] ? (widget.options[:numerator].name.to_s) : metric_options[:metric].name.to_s
+   		   unless widget.options[:rate]
+   		     percentage = sum / total * 100
+ 			     label_name += metric_options[:options][:y_axis] == 2 ? " (Right Y-Axis)" : " (#{number_to_percentage(percentage)})" 
+ 			   end
+   		 %>
   			 {
-  			  <% label_name = metric_options[:metric].name.to_s + (metric_options[:options][:y_axis] == 2 ? " (Right Y-Axis)" : " (#{number_to_percentage(percentage)})") %>
   				label:"<%= label_name %> – <%= number_with_delimiter sum %>", 
   				data: [<%= js %>], 
-  				yaxis: <%= metric_options[:options][:y_axis] || 1 %>,
-  				color: '<%= cycle("red", "green", "orange", "purple", "cyan") %>'
+          yaxis: <%= metric_options[:options][:y_axis] || 1 %>,
+  				color: '<%= cycle("red", "green", "orange", "purple", "cyan") %>',
+  				<% if widget.options[:stack] %>
+  				stack: true,
+  				<% end %>
+  				<% if widget.options[:as_percentages] %>
+  				lines: { fill: true },
+  				<% end %>
   			 },
   		<% end %>
-  		]
+  		], { 
+  		  yaxis: { max: 100 }
+  		}
   	)
   })
   </script>
@@ -41,30 +82,39 @@
 
 <script type="text/javascript">
 Vanity.ci_widget = function(id) {      
-var metric = {};
-metric.chart = $("#widget_" + id + " .chart");
-metric.chart.height(metric.chart.width() / 3);
-metric.markings = [];
-metric.options = {
-  xaxis:  { mode: "time", minTickSize: [7, "day"] },
-  series: { lines: { show: true, lineWidth: 2, fill: false },
-            points: { show: false, radius: 1 }, shadowSize: 0,
-            stack: <%= widget.options[:stack] ? "1" : "null" %> },
-  colors: ["#0077CC"],
-  legend: { position: 'sw', container: "#widget_" + id +" .legend", backgroundOpacity: 0.5 },
-  grid:   { markings: metric.markings, borderWidth: 1, borderColor: '#eee', hoverable: true, aboveData: true } };
+  var metric = {};
+  metric.chart = $("#widget_" + id + " .chart");
+  metric.chart.height(metric.chart.width() / 3);
+  metric.markings = [];
+  metric.options = {
+    xaxis:  { mode: "time", minTickSize: [7, "day"] },
+    <% if widget.options[:as_percentages] %>
+    yaxis:{
+      ticks: 10,
+      max: 100,
+      min: 0,
+    },
+    <% end %>
+    series: {
+      lines: { show: true, lineWidth: 2, fill: false },
+      points: { show: false, radius: 1 }, shadowSize: 0,
+      stack: <%= widget.options[:stack] ? '1' : 'null' %> 
+    },
+    colors: ["#0077CC"],
+    legend: { position: 'sw', container: "#widget_" + id +" .legend", backgroundOpacity: 0.5 },
+    grid:   { markings: metric.markings, borderWidth: 1, borderColor: '#eee', hoverable: true, aboveData: true }
+  };
 
-metric.plot = function(lines) {
-  $.each(lines, function(i, line) {
-    $.each(line.data, function(i, pair) { pair[0] = Date.parse(pair[0]) })
-  });
-  console.log(lines)
+  metric.plot = function(lines) {
+    $.each(lines, function(i, line) {
+      $.each(line.data, function(i, pair) { pair[0] = Date.parse(pair[0]) })
+    });
 
-  var plot = $.plot(metric.chart, lines, metric.options);
-  metric.chart.bind("plothover", Vanity.tooltip);
-  metric.chart.data('plot', plot);
-}
-return metric;
+    var plot = $.plot(metric.chart, lines, metric.options);
+    metric.chart.bind("plothover", Vanity.tooltip);
+    metric.chart.data('plot', plot);
+  }
+  return metric;
 }
 </script>
 

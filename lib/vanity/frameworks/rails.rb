@@ -247,8 +247,8 @@ module Vanity
       end
 
       def load_widget
-        type = params[:widget_type]
-        id   = params[:id]
+        type   = params[:type]
+        id     = params[:id]
         widget = Vanity.playground.send(type.singularize, id)
         render :file => Vanity.template("_#{type.singularize}"), :locals => { :"#{type.singularize}" => widget }
       end

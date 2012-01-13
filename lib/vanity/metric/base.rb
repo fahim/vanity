@@ -93,7 +93,7 @@ module Vanity
       #   Vanity::Metric.data(my_metric, Date.today - 89)
       #   Vanity::Metric.data(my_metric, Date.today - 89, Date.today)
       def data(metric, *args)
-        first = args.shift || 90
+        first = args.shift || 60
         to = args.shift || Date.today
         from = first.respond_to?(:to_date) ? first.to_date : to - (first - 1)
         (from..to).zip(metric.values(from, to))
@@ -225,8 +225,9 @@ module Vanity
     # Given two arguments, a start date and an end date (inclusive), returns an
     # array of measurements.  All metrics must implement this method.
     def values(from, to)
+      return if @values
       values = connection.metric_values(@id, from, to)
-      values.map { |row| row.first.to_i }
+      @values = values.map { |row| row.first.to_i }
     end
 
     # Returns date/time of the last update to this metric.
