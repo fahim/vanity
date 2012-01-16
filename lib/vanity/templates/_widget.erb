@@ -1,86 +1,88 @@
 <div id="widget_<%= widget.id.gsub('.', '_') %>" class="widget">
   <h3><%=vanity_h widget.name %></h3>
 
-  <%
-    data_points = []
-     # used for options[:as_percentages]
-    
-    if widget.options[:as_percentages]
-      # Gather sum by date so we can calculate percentages for each metric
-      sum_by_date = {}
-      widget.metrics.each do |metric_id, metric_options|
-        data = Vanity::Metric.data(metric_options[:metric])
-    	  data.each do |date, value|
-  	      sum_by_date[date] ||= 0
-  	      sum_by_date[date] += value
-  	    end
-	    end
-    end
-    
-    if widget.options[:rate] || widget.options[:ratio]
-      data = widget.rate_data
-  	  js = widget.rate_data.map { |date, value| "['#{date.to_time.httpdate}',#{value}]" }.join(",")
-  	  data_points << [{:options => {}}, js, 0]
-    else
-      widget.metrics.each do |metric_id, metric_options|
-        data = Vanity::Metric.data(metric_options[:metric])
-    	  sum = data.map(&:last).sum
-  	  
-    	  js = data.map do |date, value|
-    	    if widget.options[:as_percentages]
-    	      value_to_graph = sum_by_date[date] == 0 ? 0 : (value / sum_by_date[date] * 100)
-  	      else
-  	        value_to_graph = value
-          end
-    	    "['#{date.to_time.httpdate}',#{value_to_graph}]"
-  	    end.join(",")
-  	  
-    	  data_points << [metric_options, js, sum]
-      end
-
-      data_points.sort_by!(&:last)
-      total = data_points.select { |point| point.first[:options][:y_axis] == 1 }.map(&:last).sum
-    end
-  %>
-  
   <div class="chart"></div>
   <div class="legend"></div>
-
-  <script type="text/javascript">
-  $(function(){
-  	Vanity.ci_widget("<%= widget.id.gsub('.', '_') %>").plot(
-  		[
-  		 <% data_points.each_with_index do |data_point, index| %>
-  		 <%
-  		   metric_options, js, sum = data_point
- 		     label_name = widget.options[:rate] ? (widget.options[:numerator].name.to_s) : metric_options[:metric].name.to_s
-   		   unless widget.options[:rate]
-   		     percentage = sum / total * 100
- 			     label_name += metric_options[:options][:y_axis] == 2 ? " (Right Y-Axis)" : " (#{number_to_percentage(percentage)})" 
- 			   end
-   		 %>
-  			 {
-  				label:"<%= label_name %> – <%= number_with_delimiter sum %>", 
-  				data: [<%= js %>], 
-          yaxis: <%= metric_options[:options][:y_axis] || 1 %>,
-  				color: '<%= cycle("red", "green", "orange", "purple", "cyan") %>',
-  				<% if widget.options[:stack] %>
-  				stack: true,
-  				<% end %>
-  				<% if widget.options[:as_percentages] %>
-  				lines: { fill: true },
-  				<% end %>
-  			 },
-  		<% end %>
-  		], { 
-  		  yaxis: { max: 100 }
-  		}
-  	)
-  })
-  </script>
 </div>
 
+<%
+  data_points = []
+   # used for options[:as_percentages]
+  
+  if widget.options[:as_percentages]
+    # Gather sum by date so we can calculate percentages for each metric
+    sum_by_date = {}
+    widget.metrics.each do |metric_id, metric_options|
+      data = Vanity::Metric.data(metric_options[:metric])
+      data.each do |date, value|
+        sum_by_date[date] ||= 0
+        sum_by_date[date] += value
+      end
+    end
+  end
+  
+  if widget.options[:rate] || widget.options[:ratio]
+    data = widget.rate_data
+    js = widget.rate_data.map { |date, value| "['#{date.to_time.httpdate}',#{value}]" }.join(",")
+    data_points << [{:options => {}}, js, 0]
+  else
+    widget.metrics.each do |metric_id, metric_options|
+      data = Vanity::Metric.data(metric_options[:metric])
+
+      if widget.options[:as_percentages]
+      else
+        sum = data.map(&:last).sum
+      end
+    
+      js = data.map do |date, value|
+        if widget.options[:as_percentages]
+          value_to_graph = sum_by_date[date] == 0 ? 0 : (value / sum_by_date[date] * 100)
+        else
+          value_to_graph = value
+        end
+        "['#{date.to_time.httpdate}',#{value_to_graph}]"
+      end.join(",")
+    
+      data_points << [metric_options, js, sum]
+    end
+
+    data_points.sort_by!(&:last)
+    total = data_points.select { |point| point.first[:options][:y_axis] != 2 }.map(&:last).sum
+  end
+%>
+
 <script type="text/javascript">
+$(function(){
+	Vanity.ci_widget("<%= widget.id.gsub('.', '_') %>").plot(
+		[
+    <% data_points.each_with_index do |data_point, index| %>
+    <%
+      metric_options, js, sum = data_point
+      label_name = widget.options[:rate] ? (widget.options[:numerator].name.to_s) : metric_options[:metric].name.to_s
+      unless widget.options[:rate]
+        percentage = sum.to_f / total.to_f * 100
+        label_name += metric_options[:options][:y_axis] == 2 ? " (Right Y-Axis)" : " (#{number_to_percentage(percentage)})" 
+      end
+     %>
+     {
+    	label:"<%= label_name %> – <%= number_with_delimiter sum %>", 
+    	data: [<%= js %>], 
+      yaxis: <%= metric_options[:options][:y_axis] || 1 %>,
+    	color: '<%= cycle("red", "green", "orange", "purple", "cyan") %>',
+    	<% if widget.options[:stack] %>
+    	stack: true,
+    	<% end %>
+    	<% if widget.options[:as_percentages] %>
+    	lines: { fill: true },
+    	<% end %>
+     },
+    <% end %>
+], { 
+		  yaxis: { max: 100 }
+		}
+	)
+})
+
 Vanity.ci_widget = function(id) {      
   var metric = {};
   metric.chart = $("#widget_" + id + " .chart");

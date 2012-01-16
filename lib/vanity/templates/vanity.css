@@ -26,8 +26,9 @@
 .vanity form#milestones input { vertical-align: bottom }
 .vanity .metric .marking.label { position: absolute; bottom: 2em; color: #c66; font-size: 80% }
 
-.vanity .sidebar { width: 20%; background: #eee; padding: 5px; font-size: 14px; float: left }
+.vanity .sidebar { width: 20%; background: #eee; padding: 5px; font-size: 14px; float: left; overflow: hidden; }
 .vanity .content { float: left; width: 75%; margin-left: 25px }
-.vanity .content .widget { width: 45%; float: left; padding: 2%; min-height: 290px }
+.vanity .content .widget { width: 45%; float: left; padding: 2% }
+.vanity .content #widgets .widget { min-height: 0;290px; }
 
 .vanity h2 { clear: both; padding: 3px; background: #eee; color: gray; text-transform: capitalize }

@@ -27,11 +27,14 @@
       </div>
 
       <div class="content">
-        <% widget_types.each do |widget_type| %>
+        <% widget_types.each do |widget_type| count = 0 %>
           <div id="<%= widget_type %>">
             <h2><%= widget_type %></h3>
             <% Vanity.playground.send(widget_type).each do |id, widget_object| %>
-              <%= render :file => Vanity.template("_#{widget_type.singularize}.erb"), :locals => { :"#{widget_type.singularize}" => widget_object } %>
+              <% if count % 2 == 0 %><div style="overflow:hidden"><% end %>
+                <%= render :file => Vanity.template("_#{widget_type.singularize}.erb"), :locals => { :"#{widget_type.singularize}" => widget_object } %>
+              <% if count % 2 == 1 %></div><% end %>
+              <% count += 1 %>
             <% end %>
           </div>
         <% end %>
