@@ -11,7 +11,5 @@
       <script type="text/javascript">
       $(function(){Vanity.metric("#{vanity_h metric.id.to_s}").plot([{label:"#{vanity_h metric.id} – #{number_with_delimiter sum}", data: [#{js}]}])})
       </script>})
-  rescue Exception=>ex
-    %{<div class="error">#{vanity_h ex.message}</div>}
   end %>
 </div>
