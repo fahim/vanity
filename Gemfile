@@ -14,15 +14,18 @@ group :test do
   gem "mocha"
   gem "mongo"
   gem "bson_ext"
-  gem "mysql"
+  gem "minitest"
+  
+  gem "mysql2", '< 0.3'
+
   gem "passenger", "~>2.0"
   gem "pg"
-  gem "rails", "~>2.3.8"
+  gem "rails", "~>3.0.10"
   gem "rack"
   gem "shoulda"
   gem "timecop"
   gem "webmock"
-  gem "ruby-debug", :platforms => :mri_18
-  gem "ruby-debug19", :platforms => :mri_19
+  #gem "ruby-debug", :platforms => :mri_18
+  #gem "ruby-debug19", :platforms => :mri_19
   gem "SystemTimer", "1.2.3", :platforms => :mri_18
 end

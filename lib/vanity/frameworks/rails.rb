@@ -49,7 +49,7 @@ module Vanity
               cookies["vanity_id"] = { :value=>@vanity_identity, :expires=>1.month.from_now }
               @vanity_identity
             elsif response # everyday use
-              @vanity_identity = cookies["vanity_id"] || ActiveSupport::SecureRandom.hex(16)
+              @vanity_identity = cookies["vanity_id"] || SecureRandom.hex(16)
               cookie = { :value=>@vanity_identity, :expires=>1.month.from_now }
               # Useful if application and admin console are on separate domains.
               # This only works in Rails 3.x.
@@ -83,15 +83,15 @@ module Vanity
         else
           class << self
             define_method :vanity_identity do
-              @vanity_identity = @vanity_identity || ActiveSupport::SecureRandom.hex(16)
+              @vanity_identity = @vanity_identity || SecureRandom.hex(16)
             end
           end
         end
       end
       protected :use_vanity_mailer
     end
-    
-    
+
+
     # Vanity needs these filters.  They are includes in ActionController and
     # automatically added when you use #use_vanity in your controller.
     module Filters
@@ -139,7 +139,7 @@ module Vanity
       def vanity_reload_filter
         Vanity.playground.reload!
       end
-      
+
       # Filter to track metrics
       # pass _track param along to call track! on that alternative
       def vanity_track_filter
@@ -147,7 +147,7 @@ module Vanity
           track! params[:_track]
         end
       end
-      
+
       protected :vanity_context_filter, :vanity_query_parameter_filter, :vanity_reload_filter
     end
 
@@ -186,7 +186,7 @@ module Vanity
         else
           value = Vanity.playground.experiment(name.to_sym).choose.value
         end
- 
+
         if block
           content = capture(value, &block)
           block_called_from_erb?(block) ? concat(content) : content
@@ -194,13 +194,13 @@ module Vanity
           value
         end
       end
-      
+
       # Generate url with the identity of the current user and the metric to track on click
       def vanity_track_url_for(identity, metric, options = {})
         options = options.merge(:_identity => identity, :_track => metric)
         url_for(options)
       end
-      
+
       # Generate url with the fingerprint for the current Vanity experiment
       def vanity_tracking_image(identity, metric, options = {})
         options = options.merge(:controller => :vanity, :action => :image, :_identity => identity, :_track => metric)
@@ -210,7 +210,7 @@ module Vanity
       def vanity_js
         return if @_vanity_experiments.nil?
         javascript_tag do
-          render Vanity.template("vanity.js.erb")
+          render :file=>Vanity.template("_vanity.js.erb")
         end
       end
 
@@ -264,12 +264,13 @@ module Vanity
       	  render :status => 404, :nothing => true
       	  return
       	end
+
         exp = Vanity.playground.experiment(params[:e].to_sym)
         exp.chooses(exp.alternatives[params[:a].to_i].value)
         render :status => 200, :nothing => true
       end
     end
-    
+
     module TrackingImage
       def image
         # send image

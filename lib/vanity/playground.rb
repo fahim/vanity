@@ -165,6 +165,7 @@ module Vanity
     # @see Vanity::Metric
     # @since 1.1.0
     def metric(id)
+      puts metrics.inspect
       metrics[id.to_s] or raise NameError, "No metric #{id}"
     end
 

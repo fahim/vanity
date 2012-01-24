@@ -126,7 +126,7 @@ module Vanity
     # id (can infer from name).
     def initialize(playground, id)
       @playground = playground
-      @id = id.downcase.gsub(/\W+/, '_').to_sym
+      @id = id.to_s.downcase.gsub(/\W+/, '_').to_sym
       @metric_id = id
       @hooks = []
     end

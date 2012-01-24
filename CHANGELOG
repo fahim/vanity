@@ -26,6 +26,10 @@ connections are deprecated in favor of using the connection option with a URI
 
 == 1.7.0 (2011-08-27)
 
+Note: Vanity is no longer tested to work with Rails 2.3.x.  This version is
+only tested against Rails 3.0.x.
+
+
 1.7.0 adds support for ActionMailer, for example:
 
 	class UserMailer < ActionMailer::Base 
