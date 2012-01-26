@@ -430,7 +430,7 @@ module Vanity
         super
         if @metrics.nil? || @metrics.empty?
           warn "Please use metrics method to explicitly state which metric you are measuring against."
-          metric = @playground.metrics[id] ||= Vanity::Metric.new(@playground, name)
+          metric = @playground.metrics[id.to_s] ||= Vanity::Metric.new(@playground, name)
           @metrics = [metric]
         end
         @metrics.each do |metric|

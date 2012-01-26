@@ -4,7 +4,7 @@ class UseVanityController < ActionController::Base
   attr_accessor :current_user
 
   def index
-    render :text=>ab_test(:pie_or_cake)
+    render :text => ab_test(:pie_or_cake)
   end
 end
 
@@ -33,7 +33,6 @@ class UseVanityTest < ActionController::TestCase
     get :index
     assert_equal 'false', @response.body
   end
-
 
   def test_vanity_cookie_is_persistent
     get :index
@@ -71,6 +70,7 @@ class UseVanityTest < ActionController::TestCase
     end
     @controller.current_user = Object.new
     get :index
+
     assert cookies['vanity_id'] =~ /^[a-f0-9]{32}$/
   end
 

@@ -98,7 +98,8 @@ module Vanity
     def experiment(name)
       id = name.to_s.downcase.gsub(/\W/, "_").to_sym
       warn "Deprecated: pleae call experiment method with experiment identifier (a Ruby symbol)" unless id == name
-      experiments[id.to_sym] or raise NameError, "No experiment #{id}"
+
+      experiments[id.to_sym] or raise NameError, "No experiment #{id} in #{experiments.inspect}"
     end
 
 
@@ -165,8 +166,7 @@ module Vanity
     # @see Vanity::Metric
     # @since 1.1.0
     def metric(id)
-      puts metrics.inspect
-      metrics[id.to_s] or raise NameError, "No metric #{id}"
+      metrics[id.to_s] or raise NameError, "No metric #{id} in #{Vanity.playground.metrics.inspect}"
     end
 
     # True if collection data (metrics and experiments). You only want to

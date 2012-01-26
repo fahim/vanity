@@ -13,7 +13,7 @@ require "phusion_passenger/events"
 require "vanity"
 require "timecop"
 require "webmock/test_unit"
-#require "ruby-debug"
+require "ruby-debug"
 
 
 if $VERBOSE
@@ -64,8 +64,9 @@ class Test::Unit::TestCase
   # Defines the specified metrics (one or more names).  Returns metric, or array
   # of metric (if more than one argument).
   def metric(*ids)
-    metrics = ids.map do |id|
-      Vanity.playground.metrics[id] ||= Vanity::Metric.new(Vanity.playground, id)
+    metrics = ids.map do |id_sym|
+      id = id_sym.to_s.downcase
+      Vanity.playground.metrics[id.to_s] ||= Vanity::Metric.new(Vanity.playground, id)
     end
     ids.size == 1 ? metrics.first : metrics
   end
